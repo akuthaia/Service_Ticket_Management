@@ -1,0 +1,452 @@
+--CREATION QUERIES
+--Team Table Creation
+CREATE TABLE team
+(
+	team_ID VARCHAR(10) PRIMARY KEY,
+	team_name VARCHAR(20) NOT NULL,
+);
+
+
+--User Table Creation
+CREATE TABLE user_table
+(
+	user_ID VARCHAR(10),-- PRIMARY KEY,
+	team_ID VARCHAR (10) NOT NULL,
+	user_FName VARCHAR(20) NOT NULL,
+	user_LName VARCHAR(20) NOT NULL,
+	user_mob VARCHAR(15),
+	user_email VARCHAR(50) NOT NULL,
+	user_role CHAR(1),
+
+CONSTRAINT user_table_PK PRIMARY KEY (user_ID),
+
+CONSTRAINT user_table_FK FOREIGN KEY (team_ID) REFERENCES team(team_ID),
+);
+
+
+
+--Login Credentials Table Creation
+CREATE TABLE login_cred
+(
+	user_ID VARCHAR(10) PRIMARY KEY,
+	--team_ID VARCHAR (10) NOT NULL,  --****CHECK LATER if required in this table
+	user_name VARCHAR(20) NOT NULL,
+	user_pwd VARCHAR(20) NOT NULL,
+
+CONSTRAINT login_cred_FK FOREIGN KEY(user_ID) REFERENCES user_table(user_ID),
+);
+
+ALTER TABLE login_cred
+ADD user_role CHAR(1);
+
+--Client Details Table Creation 
+CREATE TABLE client_details
+(
+	user_ID VARCHAR(10) PRIMARY KEY,
+	user_team VARCHAR(10) NOT NULL,
+	user_location VARCHAR(30),
+	crq_count INTEGER,
+	inc_count INTEGER,
+
+CONSTRAINT client_details_FK FOREIGN KEY(user_ID) REFERENCES user_table(user_ID),
+CONSTRAINT client_details_FK_user_team FOREIGN KEY(user_team) REFERENCES team(team_ID),
+);
+
+--Employee Table Creation
+CREATE TABLE employee_details
+(
+	user_ID VARCHAR(10) PRIMARY KEY,
+	user_team VARCHAR(10) NOT NULL,
+	user_location VARCHAR(30),
+	crq_count INTEGER,
+	inc_count INTEGER,
+
+CONSTRAINT employee_FK FOREIGN KEY(user_ID) REFERENCES user_table(user_ID),
+CONSTRAINT employee_FK_user_team FOREIGN KEY(user_team) REFERENCES team(team_ID),
+);
+
+
+--Ticket Table Creation
+CREATE TABLE ticket
+(
+	ticket_ID VARCHAR(10),
+	owner_ID VARCHAR(10),
+	ticket_type CHAR(01),
+
+CONSTRAINT ticket_PK PRIMARY KEY(ticket_ID,owner_ID),
+
+CONSTRAINT ticket_FK FOREIGN KEY(owner_ID) REFERENCES client_details(user_ID),
+);
+
+
+--Change Request Type Table Creation 
+CREATE TABLE change_req_type
+(
+	crq_request_type CHAR(02) PRIMARY KEY,
+	crq_request_description VARCHAR(25),
+);
+
+
+--Change Request Status Table Creation
+CREATE TABLE change_req_status
+(
+	status CHAR(02) PRIMARY KEY,
+	status_desc VARCHAR(25),
+);
+
+--Change Request Priority Table Creation
+CREATE TABLE change_req_priority
+(
+	crq_prority_scale CHAR(02) PRIMARY KEY,
+	crq_priority_desc VARCHAR(25),
+	crq_priority_duration INTEGER,
+);
+
+
+--Change Request Table Creation
+CREATE TABLE change_req_table
+(
+	crq_num VARCHAR(10),
+	ticket_ID VARCHAR(10) NOT NULL,
+	owner_ID VARCHAR(10) NOT NULL,
+	assignee_ID VARCHAR(10),
+	request_type CHAR(02), -- Can be number too
+	crq_status CHAR(02), -- Can be ID types
+	crq_priority CHAR(02), -- 01/02/03
+
+	crq_summary VARCHAR(50) NOT NULL,
+	crq_notes VARCHAR(150),
+	crq_test_instructions VARCHAR(250),
+	crq_knowledge_transfer VARCHAR(250),
+	crq_creation_date DATETIME DEFAULT GETDATE(),
+	crq_est_start DATETIME, --NOT NULL,
+	crq_est_end DATETIME, --NOT NULL,
+	crq_actual_start DATETIME,
+	crq_actual_end DATETIME,
+
+CONSTRAINT change_req_PK PRIMARY KEY(crq_num),
+CONSTRAINT change_req_FK_ticket_id FOREIGN KEY(ticket_ID,owner_ID) REFERENCES ticket(ticket_ID,owner_ID),
+--CONSTRAINT change_req_FK_owner_ID FOREIGN KEY(owner_ID) REFERENCES ticket(owner_ID),
+CONSTRAINT change_req_FK_assignee_ID FOREIGN KEY(assignee_ID) REFERENCES employee_details(user_ID),
+CONSTRAINT change_req_FK_request_type FOREIGN KEY(request_type) REFERENCES change_req_type(crq_request_type),
+CONSTRAINT change_req_FK_crq_status FOREIGN KEY(crq_status) REFERENCES  change_req_status(status),
+CONSTRAINT change_req_FK_crq_priority FOREIGN KEY(crq_priority) REFERENCES change_req_priority(crq_prority_scale),
+);
+
+
+--Change Request Info Table Creation
+/*CREATE TABLE change_req_info
+(
+	crq_num VARCHAR(10) PRIMARY KEY,
+	crq_summary VARCHAR(50) NOT NULL,
+	crq_notes VARCHAR(150),
+	crq_test_instructions VARCHAR(250),
+	crq_knowledge_transfer VARCHAR(250),
+	crq_creation_date DATETIME DEFAULT GETDATE(),
+	crq_est_start DATETIME, --NOT NULL,
+	crq_est_end DATETIME, --NOT NULL,
+	crq_actual_start DATETIME,
+	crq_actual_end DATETIME,
+
+CONSTRAINT change_req_info_FK FOREIGN KEY(crq_num) REFERENCES change_req_table(crq_num),
+);*/
+
+
+
+--INCIDENT TABLES CREATION 
+--Incident Impact Table Creation
+CREATE TABLE incident_impact
+(
+	impact_scale CHAR(02) PRIMARY KEY,
+	impact_description VARCHAR(40),
+	inc_priority_desc CHAR(20),
+	inc_priority_duration INTEGER,
+);
+
+
+--Incident Status Table Creation
+CREATE TABLE incident_status
+(
+	inc_status CHAR(02) PRIMARY KEY,
+	inc_status_desc CHAR(20),
+);
+
+
+/*CREATE TABLE incident_priority
+(
+	inc_prority_scale CHAR(02) PRIMARY KEY,
+	inc_priority_desc CHAR(20),
+	inc_priority_duration INTEGER,
+);*/
+
+
+--Incident Table Creation
+CREATE TABLE incident_table
+(
+	inc_num VARCHAR(10) PRIMARY KEY,
+	ticket_ID VARCHAR(10),
+	owner_ID VARCHAR(10),
+	assignee_ID VARCHAR(10),
+	impact_scale CHAR(02) NOT NULL,
+	inc_status CHAR(02), -- Can be ID types
+	--inc_priority CHAR(02), -- 01/02/03
+	--NEW ADDITION
+	inc_summary CHAR(50) NOT NULL,
+	inc_notes CHAR(250),
+	inc_reason VARCHAR(250),
+	inc_resolution VARCHAR(250),
+	inc_creation_date DATETIME DEFAULT GETDATE(),
+	inc_start_date DATETIME,
+	inc_end_date DATETIME,
+
+
+CONSTRAINT incident_table_FK FOREIGN KEY(ticket_ID,owner_ID) REFERENCES ticket(ticket_ID,owner_ID),
+--CONSTRAINT incident_table_FK FOREIGN KEY(owner_ID) REFERENCES ticket(owner_ID),
+CONSTRAINT incident_table_FK_assignee_ID FOREIGN KEY(assignee_ID) REFERENCES employee_details(user_ID),
+CONSTRAINT incident_table_FK_impact_scale FOREIGN KEY(impact_scale) REFERENCES incident_impact(impact_scale),
+CONSTRAINT incident_table_FK_inc_status FOREIGN KEY(inc_status) REFERENCES  incident_status(inc_status),
+--CONSTRAINT incident_table_FK_inc_priority FOREIGN KEY(inc_priority) REFERENCES incident_priority(inc_prority_scale),   
+);
+
+
+--Incident Info Table Creation
+/*CREATE TABLE incident_info
+(
+	inc_num VARCHAR(10) PRIMARY KEY,
+	inc_summary CHAR(50) NOT NULL,
+	inc_notes CHAR(250),
+	inc_reason VARCHAR(250),
+	inc_resolution VARCHAR(250),
+	inc_creation_date DATETIME DEFAULT GETDATE(),
+	inc_start_date DATETIME,
+	--inc_actual_start DATE, 
+	--inc_actual_end DATE,
+	inc_end_date DATETIME, 
+
+CONSTRAINT incident_info_FK FOREIGN KEY(inc_num) REFERENCES incident_table(inc_num),
+);*/
+
+--DROP
+--DROP TABLE incident_info;
+DROP TABLE incident_table;
+--DROP TABLE incident_priority;
+DROP TABLE incident_status;
+DROP TABLE incident_impact;
+
+--DROP TABLE change_req_info;
+DROP TABLE change_req_table;
+DROP TABLE change_req_priority;
+DROP TABLE change_req_status;
+DROP TABLE change_req_type;
+
+DROP TABLE ticket;
+DROP TABLE employee_details;
+DROP TABLE client_details;
+DROP TABLE login_cred;
+DROP TABLE user_table;
+DROP TABLE team;
+
+
+INSERT INTO team VALUES ('FIN','FINANCE');
+INSERT INTO team VALUES ('ACC','ACCOUNTING');
+INSERT INTO team VALUES ('MKT','MARKETING');
+INSERT INTO team VALUES ('MAT','MATERIAL MANAGEMENT');
+INSERT INTO team VALUES ('SAL','SALES');
+INSERT INTO team VALUES ('TEC','TECHNICAL');
+INSERT INTO team VALUES ('TST','TESTING');
+
+INSERT INTO user_table VALUES ('US0001','FIN','James','McNulty','315-555-0164','mcnultyj@company.com','C');
+INSERT INTO user_table VALUES ('US0002','TST','Dexter','Morgan','315-555-0121','morgand@company.com','E');
+INSERT INTO user_table VALUES ('US0003','MKT','James','Hetfield','315-555-0162','hetfieldj@company.com','C');
+INSERT INTO user_table VALUES ('US0004','ACC','Bruce','Dickinson','315-555-0128','dickinsonb@company.com','C');
+INSERT INTO user_table VALUES ('US0005','FIN','Steven','Wilson','315-555-0157','wilsons@company.com','E');
+INSERT INTO user_table VALUES ('US0006','MAT','Mikael','Akerfeldt','315-555-0171','akerfeldtm@company.com','E');
+INSERT INTO user_table VALUES ('US0007','SAL','Ross','Geller','518-881-7232','gellerr@company.com','E');
+INSERT INTO user_table VALUES ('US0008','TEC','Monica','Geller','914-860-1092','gellerm@company.com','E');
+INSERT INTO user_table VALUES ('US0009','MKT','Walter',	'White','516-753-8034','whitew@company.com','C');
+INSERT INTO user_table VALUES ('US0010','TST','Barney','Stinson','646-216-0402','stinsonb@company.com','E');
+INSERT INTO user_table VALUES ('US0011','SAL','Joey','Tribbiani','607-429-6450','tribbianij@company.com','C');
+INSERT INTO user_table VALUES ('US0012','TEC','Pink','Floyd','518-744-2289','floydp@company.com','C');
+INSERT INTO user_table VALUES ('US0013','TEC','Kurt','Cobain','845-663-2248','cobaink@company.com','E');
+INSERT INTO user_table VALUES ('US0014','MAT','Michael','Scofield','585-402-5504','scofieldm@company.com','C');
+INSERT INTO user_table VALUES ('US0015','TEC','John','Locke','847-717-6576','lockej@company.com','E');
+INSERT INTO user_table VALUES ('US0016','MAT','Phoebe','Buffay','773-286-6121','buffayp@company.com','C');
+
+
+INSERT INTO login_cred VALUES ('US0001','mcnultyj','mcnultyjus0001');
+INSERT INTO login_cred VALUES ('US0002','morgand','morgandus0002');
+INSERT INTO login_cred VALUES ('US0003','hetfieldj','hetfieldjus0003');
+INSERT INTO login_cred VALUES ('US0004','dickinsonb','dickinsonbus0004');
+INSERT INTO login_cred VALUES ('US0005','wilsons','wilsonsus0005');
+INSERT INTO login_cred VALUES ('US0006','akerfeldtm','akerfeldtmus0006');
+INSERT INTO login_cred VALUES ('US0007','gellerr','gellerrus0007');
+INSERT INTO login_cred VALUES ('US0008','gellerm','gellermus0008');
+INSERT INTO login_cred VALUES ('US0009','whitew','whitewus0009');
+INSERT INTO login_cred VALUES ('US0010','stinsonb','stinsonbus0010');
+INSERT INTO login_cred VALUES ('US0011','tribbianij','tribbianijus0011');
+INSERT INTO login_cred VALUES ('US0012','floydp','floydpus0012');
+INSERT INTO login_cred VALUES ('US0013','cobaink','cobainkus0013');
+INSERT INTO login_cred VALUES ('US0014','scofieldm','scofieldmus0014');
+INSERT INTO login_cred VALUES ('US0015','lockej','lockejus0015');
+INSERT INTO login_cred VALUES ('US0016','buffayp','buffaypus0016');
+
+INSERT INTO client_details (user_ID,user_team,user_location) VALUES ('US0001','FIN','USA');
+INSERT INTO client_details (user_ID,user_team,user_location) VALUES ('US0003','MKT','USA');
+INSERT INTO client_details (user_ID,user_team,user_location) VALUES ('US0004','ACC','USA');
+INSERT INTO client_details (user_ID,user_team,user_location) VALUES ('US0009','MKT','USA');
+INSERT INTO client_details (user_ID,user_team,user_location) VALUES ('US0011','SAL','EUR');
+INSERT INTO client_details (user_ID,user_team,user_location) VALUES ('US0012','TEC','EUR');
+INSERT INTO client_details (user_ID,user_team,user_location) VALUES ('US0014','MAT','EUR');
+INSERT INTO client_details (user_ID,user_team,user_location) VALUES ('US0016','MAT','EUR');
+
+INSERT INTO employee_details (user_ID,user_team,user_location) VALUES ('US0002','TST','IND');
+INSERT INTO employee_details (user_ID,user_team,user_location) VALUES ('US0005','FIN','IND');
+INSERT INTO employee_details (user_ID,user_team,user_location) VALUES ('US0006','MAT','IND');
+INSERT INTO employee_details (user_ID,user_team,user_location) VALUES ('US0007','SAL','IND');
+INSERT INTO employee_details (user_ID,user_team,user_location) VALUES ('US0008','TEC','IND');
+INSERT INTO employee_details (user_ID,user_team,user_location) VALUES ('US0010','TST','IND');
+INSERT INTO employee_details (user_ID,user_team,user_location) VALUES ('US0013','TEC','USA');
+INSERT INTO employee_details (user_ID,user_team,user_location) VALUES ('US0015','TEC','EUR');
+
+
+INSERT INTO ticket VALUES ('TKT0000001','US0001','I');
+INSERT INTO ticket VALUES ('TKT0000002','US0003','C');
+INSERT INTO ticket VALUES ('TKT0000003','US0004','C');
+INSERT INTO ticket VALUES ('TKT0000004','US0009','C');
+INSERT INTO ticket VALUES ('TKT0000005','US0011','C');
+INSERT INTO ticket VALUES ('TKT0000006','US0012','I');
+INSERT INTO ticket VALUES ('TKT0000007','US0014','C');
+INSERT INTO ticket VALUES ('TKT0000008','US0016','I');
+INSERT INTO ticket VALUES ('TKT0000009','US0009','I');
+INSERT INTO ticket VALUES ('TKT0000010','US0003','C');
+INSERT INTO ticket VALUES ('TKT0000011','US0012','I');
+INSERT INTO ticket VALUES ('TKT0000012','US0009','C');
+
+
+INSERT INTO change_req_type  VALUES ('01','Upgrade');
+INSERT INTO change_req_type  VALUES ('02','Correction');
+INSERT INTO change_req_type  VALUES ('03','Change');
+INSERT INTO change_req_type  VALUES ('04','New Functionality');
+INSERT INTO change_req_type  VALUES ('05','Vanilla');
+
+
+INSERT INTO change_req_status  VALUES ('01','Created');
+INSERT INTO change_req_status  VALUES ('02','Assigned');
+INSERT INTO change_req_status  VALUES ('03','In Development');
+INSERT INTO change_req_status  VALUES ('04','In Test');
+INSERT INTO change_req_status  VALUES ('05','Delivered');
+INSERT INTO change_req_status  VALUES ('06','Approved');
+INSERT INTO change_req_status  VALUES ('07','Closed');
+
+
+INSERT INTO change_req_priority  VALUES ('01','Low',5);
+INSERT INTO change_req_priority  VALUES ('02','Medium',10);
+INSERT INTO change_req_priority  VALUES ('03','High',20);
+INSERT INTO change_req_priority  VALUES ('04','Very High',30);
+
+
+INSERT INTO change_req_table (crq_num,ticket_ID,owner_ID,assignee_ID,request_type,crq_status,crq_priority,crq_summary,crq_notes,crq_test_instructions,crq_knowledge_transfer,crq_creation_date,crq_est_start,crq_est_end,crq_actual_start)
+VALUES ('CRQ0001000','TKT0000002','US0003','US0005','01','02','04','Include New Vendor','Include new vendor Time Warner for our new office internet connection','Test by creating a Purchase Order','NA',11/10/2016,11/15/2016,12/15/2016,11/20/2016);
+INSERT INTO change_req_table (crq_num,ticket_ID,owner_ID,assignee_ID,request_type,crq_status,crq_priority,crq_summary,crq_notes,crq_test_instructions,crq_knowledge_transfer,crq_creation_date,crq_est_start,crq_est_end,crq_actual_start)  
+VALUES ('CRQ0001001','TKT0000003','US0004','US0007','02','03','02','Change Tax Percentage','Tax percentage has been changed for Input Tax from 10% to 5%','Test by posting a new Invoice','NA',11/5/2016,11/10/2016,11/20/2016,11/12/2016);
+INSERT INTO change_req_table (crq_num,ticket_ID,owner_ID,assignee_ID,request_type,crq_status,crq_priority,crq_summary,crq_notes,crq_test_instructions,crq_knowledge_transfer,crq_creation_date,crq_est_start,crq_est_end,crq_actual_start)  
+VALUES ('CRQ0001002','TKT0000004','US0009','US0006','03','04','03','Advertisement Poster','Create a new article for Advertisement posters','Test by creating a purchase order with the net article','NA',10/25/2016,10/30/2016,11/19/2016,11/10/2016);
+INSERT INTO change_req_table (crq_num,ticket_ID,owner_ID,assignee_ID,request_type,crq_status,crq_priority,crq_summary,crq_notes,crq_test_instructions,crq_knowledge_transfer,crq_creation_date,crq_est_start,crq_est_end,crq_actual_start)  
+VALUES ('CRQ0001003','TKT0000005','US0011','US0007','04','06','04','Settle Customer Payments','New program required to automatically settle customer payments','Test Document to be provided','NA',10/10/2016,10/15/2016,11/14/2016,10/10/2016);
+INSERT INTO change_req_table (crq_num,ticket_ID,owner_ID,assignee_ID,request_type,crq_status,crq_priority,crq_summary,crq_notes,crq_test_instructions,crq_knowledge_transfer,crq_creation_date,crq_est_start,crq_est_end)  
+VALUES ('CRQ0001004','TKT0000007','US0014','US0007','05','01','04','Create new sale software for new store','Opening a new store which requires a new software for the sale from that store','Run software','NA',11/25/2016,11/30/2016,12/30/2016);
+INSERT INTO change_req_table (crq_num,ticket_ID,owner_ID,assignee_ID,request_type,crq_status,crq_priority,crq_summary,crq_notes,crq_test_instructions,crq_knowledge_transfer,crq_creation_date,crq_est_start,crq_est_end,crq_actual_start)  
+VALUES ('CRQ0001005','TKT0000010','US0003','US0010','02','05','01','Correction require in text','Incorrect spelling needs to be corrected','Test by runnuing the script after correction','NA',11/15/2016,11/15/2016,11/20/2016,11/15/2016);
+INSERT INTO change_req_table (crq_num,ticket_ID,owner_ID,assignee_ID,request_type,crq_status,crq_priority,crq_summary,crq_notes,crq_test_instructions,crq_knowledge_transfer,crq_creation_date,crq_est_start,crq_est_end,crq_actual_start,crq_actual_end)  
+VALUES ('CRQ0001006','TKT0000012','US0009','US0015','03','07','03','Add new products in the fall line','New prodcuts have been introduced in the fall line which have to be added','Test by creating sale orders','NA',11/5/2016,11/5/2016,11/25/2016,11/5/2016,11/25/2016);
+
+
+INSERT INTO change_req_info (crq_num,crq_summary,crq_notes,crq_test_instructions,crq_knowledge_transfer,crq_creation_date,crq_est_start,crq_est_end,crq_actual_start) 
+VALUES ('CRQ0001000','Include New Vendor','Include new vendor Time Warner for our new office internet connection','Test by creating a Purchase Order','NA',11/10/2016,11/15/2016,12/15/2016,11/20/2016);
+INSERT INTO change_req_info (crq_num,crq_summary,crq_notes,crq_test_instructions,crq_knowledge_transfer,crq_creation_date,crq_est_start,crq_est_end,crq_actual_start) 
+VALUES ('CRQ0001001','Change Tax Percentage','Tax percentage has been changed for Input Tax from 10% to 5%','Test by posting a new Invoice','NA',11/5/2016,11/10/2016,11/20/2016,11/12/2016);
+INSERT INTO change_req_info (crq_num,crq_summary,crq_notes,crq_test_instructions,crq_knowledge_transfer,crq_creation_date,crq_est_start,crq_est_end,crq_actual_start) 
+VALUES ('CRQ0001002','Advertisement Poster','Create a new article for Advertisement posters','Test by creating a purchase order with the net article','NA',10/25/2016,	10/30/2016,11/19/2016,	11/10/2016);	
+INSERT INTO change_req_info (crq_num,crq_summary,crq_notes,crq_test_instructions,crq_knowledge_transfer,crq_creation_date,crq_est_start,crq_est_end,crq_actual_start) 
+VALUES ('CRQ0001003','Settle Customer Payments','New program required to automatically settle customer payments','Test Document to be provided','NA',10/10/2016,10/15/2016,11/14/2016,10/10/2016);	
+INSERT INTO change_req_info (crq_num,crq_summary,crq_notes,crq_test_instructions,crq_knowledge_transfer,crq_creation_date,crq_est_start,crq_est_end) 
+VALUES ('CRQ0001004','Create new sale software for new store','Opening a new store which requires a new software for the sale from that store','Run software','NA',11/25/2016,11/30/2016,12/30/2016);		
+INSERT INTO change_req_info (crq_num,crq_summary,crq_notes,crq_test_instructions,crq_knowledge_transfer,crq_creation_date,crq_est_start,crq_est_end,crq_actual_start) 
+VALUES ('CRQ0001005','Correction require in text','Incorrect spelling needs to be corrected','Test by runnuing the script after correction','NA',11/15/2016,11/15/2016,11/20/2016,11/15/2016);	
+INSERT INTO change_req_info (crq_num,crq_summary,crq_notes,crq_test_instructions,crq_knowledge_transfer,crq_creation_date,crq_est_start,crq_est_end,crq_actual_start,crq_actual_end) 
+VALUES ('CRQ0001006','Add new products in the fall line','New prodcuts have been introduced in the fall line which have to be added','Test by creating sale orders','NA',11/5/2016,11/5/2016,11/25/2016,11/5/2016,11/25/2016);
+
+
+INSERT INTO incident_impact  VALUES ('01','Business Affected and not functioning','Very High',5);
+INSERT INTO incident_impact  VALUES ('02','Business Affected but functioning','High',10);
+INSERT INTO incident_impact  VALUES ('03','Process Affected','Medium',12);
+INSERT INTO incident_impact  VALUES ('04','Low Effect','Low',15);
+
+
+INSERT INTO incident_status  VALUES ('01','Created');
+INSERT INTO incident_status  VALUES ('02','Assigned');
+INSERT INTO incident_status  VALUES ('03','In Development');
+INSERT INTO incident_status  VALUES ('04','In Test');
+INSERT INTO incident_status  VALUES ('05','Delivered');
+INSERT INTO incident_status  VALUES ('06','Approved');
+INSERT INTO incident_status  VALUES ('07','Closed');
+
+
+INSERT INTO incident_table (inc_num,ticket_ID,owner_ID,assignee_ID,impact_scale,inc_status,inc_summary,inc_notes,inc_creation_date) 
+VALUES ('INC0001000','TKT0000001','US0001','US0005','04','01','Balance Sheet has incorrect values','The balance sheet for this quarter is shwing incorrect values',11/25/2016);
+INSERT INTO incident_table (inc_num,ticket_ID,owner_ID,assignee_ID,impact_scale,inc_status,inc_summary,inc_notes,inc_creation_date,inc_start_date) 
+VALUES ('INC0001001','TKT0000006','US0012','US0010','02','04','Unable to create PO','Purchase order error during creation',11/23/2016,11/23/2016);
+INSERT INTO incident_table (inc_num,ticket_ID,owner_ID,assignee_ID,impact_scale,inc_status,inc_summary,inc_notes,inc_creation_date,inc_start_date) 
+VALUES ('INC0001002','TKT0000008','US0016','US0006','01','03','Network connection failed','Unable to connect to remote network',11/26/2016,11/26/2016);
+INSERT INTO incident_table (inc_num,ticket_ID,owner_ID,assignee_ID,impact_scale,inc_status,inc_summary,inc_notes,inc_reason,inc_resolution,inc_creation_date,inc_start_date,inc_end_date) 
+VALUES ('INC0001003','TKT0000009','US0009','US0015','02','07','Incorrect Spelling in advertisement','The spellings have to be corrected','Incorrect spelling while creating the advertisement','Spelling corrected in the script',11/15/2016,11/16/2016,11/16/2016);
+INSERT INTO incident_table (inc_num,ticket_ID,owner_ID,assignee_ID,impact_scale,inc_status,inc_summary,inc_notes,inc_creation_date,inc_start_date) 
+VALUES ('INC0001004','TKT0000011','US0012','US0013','03','05','User not able to use keyboard','Keyboard in system 20 is not working',11/20/2016,11/21/2016);
+
+	
+
+/*INSERT INTO incident_table (inc_num,inc_summary,inc_notes,inc_creation_date) 
+VALUES ('INC0001000','Balance Sheet has incorrect values','The balance sheet for this quarter is shwing incorrect values',11/25/2016);		
+INSERT INTO incident_info (inc_num,inc_summary,inc_notes,inc_creation_date,inc_start_date) 
+VALUES ('INC0001001','Unable to create PO','Purchase order error during creation',11/23/2016,11/23/2016);	
+INSERT INTO incident_info (inc_num,inc_summary,inc_notes,inc_creation_date,inc_start_date) 
+VALUES ('INC0001002','Network connection failed','Unable to connect to remote network',11/26/2016,11/26/2016);
+INSERT INTO incident_info (inc_num,inc_summary,inc_notes,inc_reason,inc_resolution,inc_creation_date,inc_start_date,inc_end_date) 
+VALUES ('INC0001003','Incorrect Spelling in advertisement','The spellings have to be corrected','Incorrect spelling while creating the advertisement','Spelling corrected in the script',11/15/2016,11/16/2016,11/16/2016);
+INSERT INTO incident_info (inc_num,inc_summary,inc_notes,inc_creation_date,inc_start_date) 
+VALUES ('INC0001004','User not able to use keyboard','Keyboard in system 20 is not working',11/20/2016,11/21/2016);*/
+
+
+
+SELECT * FROM incident_info;
+SELECT * FROM incident_table;
+SELECT * FROM incident_status;
+SELECT * FROM incident_impact;
+SELECT * FROM change_req_info;
+SELECT * FROM change_req_table;
+SELECT * FROM change_req_priority;
+SELECT * FROM change_req_status;
+SELECT * FROM change_req_type;
+SELECT * FROM ticket;
+SELECT * FROM employee_details;
+SELECT * FROM client_details;
+SELECT * FROM login_cred;
+SELECT * FROM user_table;
+SELECT * FROM team;
+
+
+CREATE TRIGGER updateCountTrigger
+ON incident_table
+FOR INSERT, DELETE
+AS
+IF @@ROWCOUNT >= 1
+BEGIN
+UPDATE client_details
+SET inc_count=C_INC_Count.Count_INC
+FROM
+	(SELECT owner_ID, COUNT(inc_num) AS 'Count_INC'
+	FROM incident_table 
+	GROUP BY owner_ID) AS C_INC_Count
+	WHERE C_INC_Count.owner_ID = client_details.user_ID
+END;
+
